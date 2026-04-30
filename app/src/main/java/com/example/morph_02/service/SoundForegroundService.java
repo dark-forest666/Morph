@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.example.morph_02.R;
 import com.example.morph_02.ml.AudioClassifierManager;
 import com.example.morph_02.ui.AlertManager;
@@ -61,8 +62,18 @@ public class SoundForegroundService extends Service {
     // 识别结果：存储 + 预警
     private void handleDetectionResult(DetectionItem item) {
         if (isServiceDestroyed) return;
+        Log.d("SoundService", "收到识别结果: " + item.getLabel() + " 置信度: " + item.getConfidence());
         repository.insertDetectionRecord(item);
         AlertManager.getInstance(getApplicationContext()).showAlert(item);
+        sendBroadcast(item);  // 发送广播
+    }
+
+    private void sendBroadcast(DetectionItem item) {
+        Intent intent = new Intent("com.example.morph_02.NEW_DETECTION");
+        intent.putExtra("label", item.getLabel());
+        intent.putExtra("confidence", item.getConfidence());
+        intent.putExtra("intensity", item.getIntensity());
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     @Override
@@ -107,6 +118,8 @@ public class SoundForegroundService extends Service {
             if (manager != null) manager.createNotificationChannel(channel);
         }
     }
+
+
 
     // 优先级1核心：安全释放资源，避免内存泄漏/崩溃
     @Override

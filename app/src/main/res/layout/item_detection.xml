@@ -27,7 +27,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="14sp"
                 android:textColor="@color/gray"
-                android:marginTop="4dp"/>
+                android:layout_marginTop="4dp"/>
     </LinearLayout>
 
     <!-- 提醒状态图标 -->
