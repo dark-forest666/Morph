@@ -53,6 +53,13 @@ public class HistoryActivity extends AppCompatActivity {
         recyclerDetections.setLayoutManager(new LinearLayoutManager(this));
         recyclerDetections.setAdapter(adapter);
 
+        // 👇 新增：设置删除监听
+        adapter.setOnDeleteClickListener((position, item) -> {
+            repository.deleteRecordById(item.getId());   // 数据库删除
+            loadData();   // 刷新列表（会重新从数据库加载）
+            Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show();
+        });
+
         // 下拉刷新
         swipeRefresh.setOnRefreshListener(() -> {
             handler.postDelayed(() -> {

@@ -25,6 +25,10 @@ public interface DetectionDao {
     @Query("DELETE FROM detection_records")
     void deleteAll();
 
+    // 删除单条记录
+    @Query("DELETE FROM detection_records WHERE id = :id")
+    void deleteById(long id);
+
     // 根据ID查询单条记录
     @Query("SELECT * FROM detection_records WHERE id = :id")
     DetectionEntity getRecordById(long id);

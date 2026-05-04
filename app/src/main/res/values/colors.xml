@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="gray">#FF666666</color>
+    <color name="background">#F5F5F5</color>          <!-- 浅灰背景 -->
+    <color name="surface">#FFFFFF</color>             <!-- 白色卡片 -->
+    <color name="primary_text">#1E1E1E</color>        <!-- 主要文字 -->
+    <color name="secondary_text">#555555</color>      <!-- 次要文字 -->
+    <color name="hint_text">#999999</color>           <!-- 提示文字 -->
+    <color name="start_button">#68C16C</color>        <!-- 绿色启动按钮 -->
+    <color name="stop_button">#ED5D53</color>         <!-- 红色停止按钮 -->
 </resources>

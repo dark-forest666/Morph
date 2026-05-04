@@ -21,10 +21,21 @@ public class DetectionAdapter extends RecyclerView.Adapter<DetectionAdapter.VH> 
     private final SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
     private OnItemClickListener itemClickListener;
     private OnRemindClickListener remindClickListener;
+    private OnDeleteClickListener deleteClickListener;
 
+    // 👇 新增接口
+    public interface OnDeleteClickListener {
+        void onDeleteClick(int position, DetectionItem item);
+    }
+
+    // 👇 新增 setter
+    public void setOnDeleteClickListener(OnDeleteClickListener listener) {
+        this.deleteClickListener = listener;
+    }
     public DetectionAdapter(List<DetectionItem> initial) {
         this.items = new ArrayList<>(initial != null ? initial : new ArrayList<>());
     }
+
 
     @NonNull
     @Override
@@ -35,24 +46,33 @@ public class DetectionAdapter extends RecyclerView.Adapter<DetectionAdapter.VH> 
 
     @Override
     public void onBindViewHolder(@NonNull VH holder, int position) {
-        final DetectionItem[] it = {items.get(position)};
-        String time = fmt.format(new Date(it[0].getTimestamp()));
-        holder.tvLabelTime.setText(it[0].getLabel() + "  ·  " + time);
+        DetectionItem item = items.get(position);   // 👈 改为直接获取 item
+        String time = fmt.format(new Date(item.getTimestamp()));
+        holder.tvLabelTime.setText(item.getLabel() + "  ·  " + time);
         holder.tvDetail.setText(String.format(Locale.getDefault(),
                 "置信度: %.2f  强度: %.2f",
-                it[0].getConfidence(), it[0].getIntensity()));
-        // 根据状态调整图标外观（简单示例：透明度）
-        holder.ivReminded.setAlpha(it[0].isReminded() ? 1.0f : 0.4f);
+                item.getConfidence(), item.getIntensity()));
+        holder.ivReminded.setAlpha(item.isReminded() ? 1.0f : 0.4f);
 
         holder.itemView.setOnClickListener(v -> {
-            if (itemClickListener != null) itemClickListener.onItemClick(position, it[0]);
+            if (itemClickListener != null) itemClickListener.onItemClick(position, item);
+        });
+
+        holder.itemView.setOnClickListener(v -> {
+            if (itemClickListener != null) itemClickListener.onItemClick(position, item);
         });
 
         holder.ivReminded.setOnClickListener(v -> {
-            // 切换状态并回调。真实项目应在 Repository/DB 更新后再刷新。
-            boolean newState = !it[0].isReminded();
-            it[0] = updateRemindedState(position, newState);
-            if (remindClickListener != null) remindClickListener.onRemindClick(position, it[0]);
+            boolean newState = !item.isReminded();
+            // 切换状态（本地更新，数据库更新需回调至 Activity）
+            if (remindClickListener != null) remindClickListener.onRemindClick(position, item);
+        });
+
+        // 👇 新增删除点击
+        holder.ivDelete.setOnClickListener(v -> {
+            if (deleteClickListener != null) {
+                deleteClickListener.onDeleteClick(position, item);
+            }
         });
     }
 
@@ -100,11 +120,14 @@ public class DetectionAdapter extends RecyclerView.Adapter<DetectionAdapter.VH> 
     static class VH extends RecyclerView.ViewHolder {
         TextView tvLabelTime, tvDetail;
         ImageView ivReminded;
+        ImageView ivDelete;
         VH(@NonNull View itemView) {
             super(itemView);
             tvLabelTime = itemView.findViewById(R.id.tv_label_time);
             tvDetail = itemView.findViewById(R.id.tv_detail);
             ivReminded = itemView.findViewById(R.id.iv_reminded);
+            ivDelete = itemView.findViewById(R.id.iv_delete);
         }
     }
+
 }

@@ -26,11 +26,21 @@ public class SoundForegroundService extends Service {
     private static final String CHANNEL_NAME = "环境音预警服务";
     private static final String NOTIFICATION_TITLE = "环境音监听中";
     private static final String NOTIFICATION_CONTENT = "实时识别敲门声、婴儿哭声等";
-
     private AudioClassifierManager classifierManager;
     private DetectionRepository repository;
     private boolean isServiceDestroyed = false;
+    // ... 已有常量
+    private static final String[] IMPORTANT_KEYWORDS = {
+            "knock", "door", "bell", "ring", "alarm", "cry", "baby", "scream",
+            "horn", "car", "fire", "smoke", "siren", "phone", "water", "boiling",
+            "dog", "bark", "glass", "break", "smoke detector", "beep", "timer",
+            "fireworks", "explosion", "wood block", "whack", "bouncing", "basketball bounce",
+            "domestic animals", "arrow", "whoosh"
+    };
 
+    private static final String[] EXCLUDED_LABELS = {
+            "silence", "music", "speech", "conversation", "narration", "child speech"
+    };
     @Override
     public void onCreate() {
         super.onCreate();
@@ -63,9 +73,18 @@ public class SoundForegroundService extends Service {
     private void handleDetectionResult(DetectionItem item) {
         if (isServiceDestroyed) return;
         Log.d("SoundService", "收到识别结果: " + item.getLabel() + " 置信度: " + item.getConfidence());
-        repository.insertDetectionRecord(item);
-        AlertManager.getInstance(getApplicationContext()).showAlert(item);
-        sendBroadcast(item);  // 发送广播
+
+        boolean important = isImportantSound(item);
+        Log.d("SoundService", "是否重要声音: " + important);
+
+        if (important) {
+            repository.insertDetectionRecord(item);
+            AlertManager.getInstance(getApplicationContext()).showAlert(item);
+        } else {
+            Log.d("SoundService", "非重要声音，忽略保存");
+        }
+
+        sendBroadcast(item);//广播
     }
 
     private void sendBroadcast(DetectionItem item) {
@@ -118,7 +137,41 @@ public class SoundForegroundService extends Service {
             if (manager != null) manager.createNotificationChannel(channel);
         }
     }
+    // 判断是否为重要声音
+    private boolean isImportantSound(DetectionItem item) {
+        float confidence = item.getConfidence();
+        String label = item.getLabel().toLowerCase();
 
+        // 1. 排除明确无意义的标签（黑名单）
+        for (String excl : EXCLUDED_LABELS) {
+            if (label.contains(excl)) {
+                Log.d("SoundService", "排除无意义标签: " + label);
+                return false;
+            }
+        }
+
+        // 2. 降低置信度阈值到 0.4（可根据实际调整）
+        if (confidence < 0.4f) {
+            Log.d("SoundService", "置信度过低: " + confidence);
+            return false;
+        }
+
+        // 3. 白名单匹配（包含任一关键词则保留）
+        for (String kw : IMPORTANT_KEYWORDS) {
+            if (label.contains(kw)) {
+                Log.d("SoundService", "重要声音匹配: " + label);
+                return true;
+            }
+        }
+
+        // 4. 高置信度未知声音（可选，避免漏掉新声音）
+        if (confidence > 0.7f) {
+            Log.d("SoundService", "高置信度未知声音: " + label);
+            return true;
+        }
+
+        return false;
+    }
 
 
     // 优先级1核心：安全释放资源，避免内存泄漏/崩溃

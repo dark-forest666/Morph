@@ -4,7 +4,7 @@ package com.example.morph_02.repository;
 import com.example.morph_02.data.AppDatabase;
 import com.example.morph_02.data.DetectionEntity;
 import com.example.morph_02.ui.DetectionItem;
-
+import com.example.morph_02.data.DetectionDao;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +52,7 @@ public class DetectionRepository {
         if (entities == null) return items;
         for (DetectionEntity entity : entities) {
             DetectionItem uiItem = new DetectionItem(
+                    entity.getId(),
                     entity.getTimestamp(),
                     entity.getLabel(),
                     entity.getConfidence(),
@@ -66,4 +67,10 @@ public class DetectionRepository {
     public void clearAllRecords() {
         db.detectionDao().deleteAll();
     }
+
+    public void deleteRecordById(long id) {
+        // 使用 db 获取 detectionDao，并在线程中执行
+        new Thread(() -> db.detectionDao().deleteById(id)).start();
+    }
+
 }
